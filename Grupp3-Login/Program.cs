@@ -1,3 +1,6 @@
+using Grupp3_Login.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace Grupp3_Login
 {
     public class Program
@@ -8,6 +11,8 @@ namespace Grupp3_Login
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
@@ -20,15 +25,16 @@ namespace Grupp3_Login
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-                .WithStaticAssets();
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
             app.Run();
         }
