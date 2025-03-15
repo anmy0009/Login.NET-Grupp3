@@ -34,6 +34,7 @@ namespace Grupp3_Login.Models
         [ForeignKey("Role")]
         public int roleId { get; set; }
         public Role Role { get; set; }
+        public object Accounts { get; internal set; }
     }
     public class Role
     {

@@ -9,7 +9,7 @@
 
     <div class="login-container">
         <h2>Logga in</h2>
-        <form method="post" action="/Account/Login">
+        <form method="post" asp-action="Login" asp-controller="Home">
             <div class="form-group">
                 <label for="username">Användarnamn</label>
                 <input type="text" id="username" name="username" placeholder="Användarnamn" required>
