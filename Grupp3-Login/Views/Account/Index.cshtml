@@ -1,0 +1,65 @@
+﻿@model IEnumerable<Grupp3_Login.Models.Account>
+@{
+    ViewData["Title"] = "Hantera Konton";
+}
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="card shadow-sm p-4">
+            <h1 class="text-center mb-3">Hantera Konton</h1>
+            <p class="text-center lead">Administrera användare och behörigheter.</p>
+
+            <div class="d-flex justify-content-between mb-3">
+                <a class="btn btn-success" asp-action="CreateEmployee">
+                    <i class="bi bi-person-plus"></i> Skapa Användarkonto
+                </a>
+                <a class="btn btn-secondary" asp-controller="Home" asp-action="Admin">
+                    <i class="bi bi-arrow-left"></i> Tillbaka till Admin
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover text-center align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Användarnamn</th>
+                            <th>Roll</th>
+                            <th>Åtgärder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in Model)
+                        {
+                            <tr>
+                                <td>@account.id</td>
+                                <td>@account.userName</td>
+                                <td>@account.Role.roleName</td>
+                                <td>
+                                    <a class="btn btn-warning btn-sm" asp-action="Edit" asp-route-id="@account.id">
+                                        <i class="bi bi-pencil-square"></i> Redigera
+                                    </a>
+                                    <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@account.id">
+                                        <i class="bi bi-trash"></i> Radera
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

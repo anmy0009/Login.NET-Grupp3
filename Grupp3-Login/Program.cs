@@ -1,4 +1,4 @@
-using Grupp3_Login.Models;
+﻿using Grupp3_Login.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,19 +10,32 @@ namespace Grupp3_Login
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => options.LoginPath = "/Home/Login");
-            // Add services to the container.
+            // 🔹 Lägg till autentisering och auktorisering
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options => options.LoginPath = "/Home/Login");
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("requireAdmin", policy =>
+                    policy.RequireClaim("RoleId", "1"));
+            });
+
+            // 🔹 Lägg till sessionshantering
+            builder.Services.AddSession();
+
+            // 🔹 Lägg till controllers & views
             builder.Services.AddControllersWithViews();
 
-            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // 🔹 Lägg till SQLite-databasen
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // 🔹 Konfigurera pipeline
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
@@ -34,16 +47,12 @@ namespace Grupp3_Login
             app.UseAuthentication();
             app.UseAuthorization();
 
+            // 🔹 Lägg till sessionshantering i pipelinen
+            app.UseSession();
+
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            
-
-
-            builder.Services.AddAuthorization();
-
-
 
             app.Run();
         }
