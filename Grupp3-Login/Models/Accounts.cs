@@ -14,11 +14,15 @@ namespace Grupp3_Login.Models
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
 
+        
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlite("Data Source=app.db");
+                optionsBuilder
+                    .UseLazyLoadingProxies()
+                    .UseSqlite("Data Source=app.db");
             }
         }
     }
@@ -33,8 +37,7 @@ namespace Grupp3_Login.Models
 
         [ForeignKey("Role")]
         public int roleId { get; set; }
-        public Role Role { get; set; }
-        public object Accounts { get; internal set; }
+        public virtual Role Role { get; set; }
     }
     public class Role
     {

@@ -1,64 +1,77 @@
-using System.Diagnostics;
+ï»¿using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Grupp3_Login.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
-namespace Grupp3_Login.Controllers
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly AppDbContext _context;
+
+    public HomeController(AppDbContext context)
     {
-        private readonly AppDbContext _context;
+        _context = context;
+    }
 
-        public HomeController(AppDbContext context)
+    public IActionResult Index()
+    {
+        return View();
+    }
+
+    public IActionResult Login(string returnUrl)
+    {
+        ViewBag.ReturnUrl = returnUrl;
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Login(Account account, string returnUrl)
+    {
+        var user = _context.Accounts.FirstOrDefault(a => a.userName == account.userName && a.password == account.password);
+
+        if (user == null)
         {
-            _context = context;
-        }
-
-        public IActionResult Index() { 
+            ViewBag.ErrorMessage = "Fel anvÃ¤ndarnamn eller lÃ¶senord";
             return View();
         }
 
-        // Login GET-action (visar inloggningssidan)
-        public IActionResult Login(string returnUrl)
+        var claims = new List<Claim>
         {
-            ViewBag.ReturnUrl = returnUrl; // Sätt returnUrl i ViewBag för att kunna använda den i vyn
-            return View();
-        }
-        [HttpPost]
-        public async Task<IActionResult> Login(Account account, string returnUrl)
-        {
-            // Kolla användarnamn och lösenord
-            bool accountValid = account.userName == "superadmin" && account.password == "Robert54321";
+            new Claim(ClaimTypes.Name, user.userName),
+            new Claim("RoleId", user.roleId.ToString()) // ðŸ‘ˆ Lagrar roleId som claim
+        };
 
-            // Fel användarnamn eller lösenord
-            if (accountValid == false)
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+            new AuthenticationProperties
             {
-                ViewBag.ErrorMessage = "Login failed: Wrong username or password";
-                ViewBag.ReturnUrl = returnUrl;
-                return View();
-            }
-            // Korrekt användarnamn och lösenord, logga in användaren
-            var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-            identity.AddClaim(new Claim(ClaimTypes.Name, account.userName));
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-            // Ifall vi inte har en returnUrl, gå till Home
-            if (String.IsNullOrEmpty(returnUrl))
-            {
-                return RedirectToAction("Admin", "Home");
-            }
+                IsPersistent = true, // HÃ¥ller sessionen vid liv om webblÃ¤saren stÃ¤ngs
+                ExpiresUtc = DateTime.UtcNow.AddMinutes(10) // Automatisk utloggning efter 10 min
+            });
 
-            // Gå tillbaka via returnUrl
-            return Redirect(returnUrl);
-        }
 
-        [Authorize]
-        public IActionResult Admin()
+        if (user.roleId == 1)
         {
-            return View();
+            return RedirectToAction("Admin", "Home");
         }
 
+        return RedirectToAction("Admin", "Home");
+    }
+
+    [Authorize(Policy = "requireAdmin")] // Endast admin kan komma Ã¥t Admin-sidan
+    public IActionResult Admin()
+    {
+        return View();
+    }
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction("Index", "Home"); // Skickar anvÃ¤ndaren till startsidan efter utloggning
     }
 }
