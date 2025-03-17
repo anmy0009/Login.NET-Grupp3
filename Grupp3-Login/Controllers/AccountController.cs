@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Grupp3_Login.Models;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 [Authorize(Policy = "requireAdmin")] // 🔐 Endast Admin kan komma åt denna controller
 public class AccountController : Controller
@@ -98,5 +101,31 @@ public class AccountController : Controller
             await _context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    public IActionResult RegisterCustomer()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RegisterCustomer(Account account)
+    {
+        if (ModelState.IsValid)
+        {
+            // Assigna automatiskt role id 3.
+            account.roleId = 3;
+
+
+            _context.Accounts.Add(account);
+            await _context.SaveChangesAsync();
+
+
+            // Omdirigera till home
+            return RedirectToAction("Index", "Home");
+        }
+
+        return View(account);
     }
 }
