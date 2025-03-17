@@ -103,6 +103,7 @@ public class AccountController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+<<<<<<< HEAD
     public IActionResult RegisterCustomer()
     {
         return View();
@@ -128,4 +129,9 @@ public class AccountController : Controller
 
         return View(account);
     }
+=======
+    public IActionResult SkapaKonto() {
+        return View();
+    }
+>>>>>>> 1fb09e2a1a4e32f45f9b8314f32ac00fd3102853
 }
