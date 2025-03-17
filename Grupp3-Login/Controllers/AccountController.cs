@@ -99,4 +99,8 @@ public class AccountController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+
+    public IActionResult SkapaKonto() {
+        return View();
+    }
 }
