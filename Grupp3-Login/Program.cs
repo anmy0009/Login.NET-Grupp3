@@ -1,4 +1,5 @@
 ﻿using Grupp3_Login.Models;
+using Grupp3_Login.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,8 @@ namespace Grupp3_Login
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddHttpClient<AccountService>();
 
             // 🔹 Lägg till autentisering och auktorisering
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
