@@ -102,36 +102,32 @@ public class AccountController : Controller
         }
         return RedirectToAction(nameof(Index));
     }
+public IActionResult RegisterCustomer()
+{
+    return View();
+}
 
-<<<<<<< HEAD
-    public IActionResult RegisterCustomer()
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> RegisterCustomer(Account account)
+{
+    if (ModelState.IsValid)
     {
-        return View();
+        // Assigna automatiskt role id 3.
+        account.roleId = 3;
+
+        _context.Accounts.Add(account);
+        await _context.SaveChangesAsync();
+
+        // Omdirigera till home
+        return RedirectToAction("Index", "Home");
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RegisterCustomer(Account account)
-    {
-        if (ModelState.IsValid)
-        {
-            // Assigna automatiskt role id 3.
-            account.roleId = 3;
+    return View(account);
+}
 
-
-            _context.Accounts.Add(account);
-            await _context.SaveChangesAsync();
-
-
-            // Omdirigera till home
-            return RedirectToAction("Index", "Home");
-        }
-
-        return View(account);
-    }
-=======
     public IActionResult SkapaKonto() {
         return View();
     }
->>>>>>> 1fb09e2a1a4e32f45f9b8314f32ac00fd3102853
+
 }
