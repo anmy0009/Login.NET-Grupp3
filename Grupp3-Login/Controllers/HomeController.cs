@@ -1,77 +1,90 @@
-﻿using System.Linq;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Grupp3_Login.Models;
 using Microsoft.AspNetCore.Authorization;
+using Grupp3_Login.Models; // Se till att `LoginRequest`-modellen finns här
 
 public class HomeController : Controller
 {
-    private readonly AppDbContext _context;
+    private readonly HttpClient _httpClient;
 
-    public HomeController(AppDbContext context)
+    public HomeController(HttpClient httpClient)
     {
-        _context = context;
+        _httpClient = httpClient;
     }
 
+    // 🏠 Visa loginformuläret
     public IActionResult Index()
     {
         return View();
     }
 
-    public IActionResult Login(string returnUrl)
+    public IActionResult Login()
     {
-        ViewBag.ReturnUrl = returnUrl;
         return View();
     }
-
-    [HttpPost]
-    public async Task<IActionResult> Login(Account account, string returnUrl)
-    {
-        var user = _context.Accounts.FirstOrDefault(a => a.userName == account.userName && a.password == account.password);
-
-        if (user == null)
-        {
-            ViewBag.ErrorMessage = "Fel användarnamn eller lösenord";
-            return View();
-        }
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.userName),
-            new Claim("RoleId", user.roleId.ToString()) // 👈 Lagrar roleId som claim
-        };
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
-            new AuthenticationProperties
-            {
-                IsPersistent = true, // Håller sessionen vid liv om webbläsaren stängs
-                ExpiresUtc = DateTime.UtcNow.AddMinutes(10) // Automatisk utloggning efter 10 min
-            });
-
-
-        if (user.roleId == 1)
-        {
-            return RedirectToAction("Admin", "Home");
-        }
-
-        return RedirectToAction("Admin", "Home");
-    }
-
-    [Authorize(Policy = "requireAdmin")] // Endast admin kan komma åt Admin-sidan
     public IActionResult Admin()
     {
+        var token = HttpContext.Session.GetString("JWTToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            return RedirectToAction("Index");
+        }
+
         return View();
     }
-    public async Task<IActionResult> Logout()
+
+    // ✅ Hantera inloggning via API:et
+    [HttpPost]
+    public async Task<IActionResult> Login(LoginRequest model)
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return RedirectToAction("Index", "Home"); // Skickar användaren till startsidan efter utloggning
+        if (!ModelState.IsValid)
+        {
+            return View("Index", model); // Om formuläret är felaktigt, visa det igen
+        }
+
+        // 🔹 Skicka loginförfrågan till API:et
+        var response = await _httpClient.PostAsJsonAsync("https://localhost:7200/api/Authentication/login", model);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ViewBag.Error = "Felaktigt användarnamn eller lösenord.";
+            return View("Index");
+        }
+
+        // 🔹 Läs svaret och spara JWT-token & roll i sessionen
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+        HttpContext.Session.SetString("JWTToken", result.Token);
+        HttpContext.Session.SetString("UserRole", result.Role);
+
+        if (result.Role == "Admin")
+        {
+            return RedirectToAction("Admin");
+        }
+
+        return RedirectToAction("Dashboard"); // Skicka användaren till en skyddad sida
+    }
+
+    // 🔒 Skyddad vy (Dashboard)
+    [Authorize] // Kräver autentisering
+    public IActionResult Dashboard()
+    {
+        var token = HttpContext.Session.GetString("JWTToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            return RedirectToAction("Index"); // Skicka tillbaka till login om ej inloggad
+        }
+
+        return View();
+    }
+
+    // 🚪 Logga ut
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Clear(); // Rensa sessionen
+        return RedirectToAction("Index");
     }
 }
