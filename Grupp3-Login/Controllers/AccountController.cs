@@ -126,7 +126,7 @@ public async Task<IActionResult> RegisterCustomer(Account account)
     return View(account);
 }
 
-    public IActionResult SkapaKonto() {
+    public IActionResult CreateAccount() {
         return View();
     }
 
